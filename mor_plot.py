@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import spline
 import mysql.connector as myc
+from datetime import date
 
 def media(date,data,dias=30):
     length = len(data)
@@ -51,30 +52,32 @@ def retrieve_db(query):
 
 
 def duration_calls_profit(dias_media):
-    query ="SELECT date, SUM(billsec) as duration, COUNT(billsec) as calls, SUM(IF(reseller_price <= 0.001, user_price, reseller_price)) - SUM(provider_price) as profit FROM calls WHERE disposition='ANSWERED' GROUP BY date"
+    today = date.today()
+    query ="SELECT date, SUM(billsec) as duration, COUNT(billsec) as calls, SUM(IF(reseller_price <= 0.001, user_price, reseller_price)) - SUM(provider_price) as profit " + \
+            "FROM calls WHERE disposition='ANSWERED' AND date<'" + today.isoformat() + "' GROUP BY date"
     rows = retrieve_db(query)
-    date = [];
+    dates = [];
     duration = [];
     calls = [];
     profit = [];
     for column in rows:
-        date.append(column[0])
+        dates.append(column[0])
         duration.append(float(column[1])/60.0)
         calls.append(float(column[2]))
         profit.append(float(column[3]))
 
-    duration_avg = media(date, duration, dias_media)
-    calls_avg = media(date, calls, dias_media)
-    profit_avg = media(date, profit, dias_media)
+    duration_avg = media(dates, duration, dias_media)
+    calls_avg = media(dates, calls, dias_media)
+    profit_avg = media(dates, profit, dias_media)
     
     plt.subplot(311)
-    plt.plot(date, duration_avg, 'r')
+    plt.plot(dates, duration_avg, 'r')
     plt.title("Duración (m)")
     plt.subplot(312)
-    plt.plot(date, calls_avg, 'g')
+    plt.plot(dates, calls_avg, 'g')
     plt.title("Nº de llamadas")
     plt.subplot(313)
-    plt.plot(date, profit_avg, 'b')
+    plt.plot(dates, profit_avg, 'b')
     plt.title("Beneficio")
 
     plt.show()
