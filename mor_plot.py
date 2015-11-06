@@ -2,12 +2,14 @@
 
 import sys
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 from scipy.interpolate import spline
 import mysql.connector as myc
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from datetime import time
 import re
 
 def media(date,data,dias=30):
@@ -94,6 +96,31 @@ def duration_calls_profit(dias_media, date_start=None, date_end=None):
 
     plt.show()
 
+def calls_hour(date_start, date_end):
+    if date_start:
+        date_start_query = " AND date>='" + date_start.isoformat() + "'";
+    else:
+        date_start_query = ""
+
+    if date_end:
+        date_end_query = " AND date<='" + date_end.isoformat() + "'";
+    else:
+        date_end_query = " AND date<='" + date.today().isoformat() + "'";
+
+    query = "SELECT calldate FROM calls WHERE disposition='ANSWERED'" +\
+            date_start_query + date_end_query
+
+    rows = retrieve_db(query)
+    calldates = [ 60*(t[0].hour*60 + t[0].minute) + t[0].second for t in rows]
+    hours = [x*60*60 for x in range(0,24)]
+    labels=map(lambda x: str(x/3600), hours)
+
+    plt.xticks(hours,labels)
+    plt.hist(calldates,bins=24)
+
+    plt.show()
+
+
 def string2date(date_string):
     try:
         date_object = datetime.strptime(date_string, "%Y-%m-%d")
@@ -123,4 +150,5 @@ if __name__ == "__main__":
         dias_media = 60
     
     print(dias_media)
-    duration_calls_profit(dias_media, date_start, date_end)
+    #duration_calls_profit(dias_media, date_start, date_end)
+    calls_hour(date_start, date_end)
