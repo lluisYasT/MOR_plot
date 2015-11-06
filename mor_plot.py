@@ -6,6 +6,9 @@ import numpy as np
 from scipy.interpolate import spline
 import mysql.connector as myc
 from datetime import date
+from datetime import datetime
+from datetime import timedelta
+import re
 
 def media(date,data,dias=30):
     length = len(data)
@@ -51,10 +54,19 @@ def retrieve_db(query):
     return rows
 
 
-def duration_calls_profit(dias_media):
-    today = date.today()
+def duration_calls_profit(dias_media, date_start=None, date_end=None):
+    if date_start:
+        date_start_query = " AND date>='" + date_start.isoformat() + "'";
+    else:
+        date_start_query = ""
+
+    if date_end:
+        date_end_query = " AND date<='" + date_end.isoformat() + "'";
+    else:
+        date_end_query = " AND date<='" + date.today().isoformat() + "'";
+
     query ="SELECT date, SUM(billsec) as duration, COUNT(billsec) as calls, SUM(IF(reseller_price <= 0.001, user_price, reseller_price)) - SUM(provider_price) as profit " + \
-            "FROM calls WHERE disposition='ANSWERED' AND date<'" + today.isoformat() + "' GROUP BY date"
+            "FROM calls WHERE disposition='ANSWERED'" + date_start_query + date_end_query + " GROUP BY date"
     rows = retrieve_db(query)
     dates = [];
     duration = [];
@@ -82,10 +94,33 @@ def duration_calls_profit(dias_media):
 
     plt.show()
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        dias_media = float(sys.argv[1])
+def string2date(date_string):
+    try:
+        date_object = datetime.strptime(date_string, "%Y-%m-%d")
+    except ValueError as err:
+        print("Wrong date format\n")
+        print("It should be like: 2015-10-25")
+        exit(-1)
+    if date_object < datetime.today():
+        return date_object
     else:
-        dias_media=15.0
+        print("Date can't be in the future")
+        exit(-1)
+
+if __name__ == "__main__":
+
+    date_start=datetime(1970,1,1)
+    date_end = datetime.today()
+    if len(sys.argv) >= 2:
+        date_start = string2date(sys.argv[1])
+    if len(sys.argv) >= 3:
+        date_end = string2date(sys.argv[2])
+
+    dias_media = round((date_end - date_start).days/20)
+    if dias_media < 1:
+        dias_media = 1
+    elif dias_media > 60:
+        dias_media = 60
     
-    duration_calls_profit(dias_media)
+    print(dias_media)
+    duration_calls_profit(dias_media, date_start, date_end)
