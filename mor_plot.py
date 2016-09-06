@@ -87,13 +87,16 @@ def duration_calls_profit(dias_media, date_start=None, date_end=None):
     plt.subplot(311)
     plt.plot(dates, duration_avg, 'r')
     plt.title("Duración (m)")
+    plt.grid()
     plt.subplot(312)
     plt.plot(dates, calls_avg, 'g')
     plt.title("Nº de llamadas")
+    plt.grid()
     plt.subplot(313)
     plt.plot(dates, profit_avg, 'b')
     plt.title("Beneficio")
 
+    plt.grid()
     plt.show()
 
 def calls_hour(date_start, date_end):
@@ -136,19 +139,21 @@ def string2date(date_string):
 
 if __name__ == "__main__":
 
-    date_start=datetime(1970,1,1)
+    date_start = datetime(1970,1,1)
     date_end = datetime.today()
     if len(sys.argv) >= 2:
         date_start = string2date(sys.argv[1])
     if len(sys.argv) >= 3:
         date_end = string2date(sys.argv[2])
-
-    dias_media = round((date_end - date_start).days/20)
-    if dias_media < 1:
-        dias_media = 1
-    elif dias_media > 60:
-        dias_media = 60
+    if len(sys.argv) >= 4:
+        dias_media = int(sys.argv[3])
+    else:
+        dias_media = round((date_end - date_start).days/20)
+        if dias_media < 1:
+            dias_media = 1
+        elif dias_media > 15:
+            dias_media = 15
     
     print(dias_media)
-    #duration_calls_profit(dias_media, date_start, date_end)
-    calls_hour(date_start, date_end)
+    duration_calls_profit(dias_media, date_start, date_end)
+    #calls_hour(date_start, date_end)
